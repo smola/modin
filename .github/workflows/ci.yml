@@ -1,0 +1,57 @@
+name: Continuous Integration
+on: [push, pull_request]
+jobs:
+  lint-black:
+    name: lint (black)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7.x'
+          architecture: 'x64'
+      - run: pip install black
+      - run: black --check modin/
+  lint-flake8:
+    name: lint (flake8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7.x'
+          architecture: 'x64'
+      - run: pip install flake8
+      - run: flake8 .
+  test-all:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.6.x', '3.7.x' ]
+    env:
+      MODIN_DEBUG: 1
+    name: test (debug, python ${{ matrix.python-version }})
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+      - run: sudo apt install -y libhdf5-dev
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -n auto --disable-pytest-warnings --cov-config=.coveragerc --cov=modin modin/pandas/test/test_dataframe.py --cov-append
+      - run: python -m pytest --disable-pytest-warnings --cov-config=.coveragerc --cov=modin modin/pandas/test/test_series.py --cov-append
+      - run: python -m pytest --disable-pytest-warnings --cov-config=.coveragerc --cov=modin modin/pandas/test/test_concat.py --cov-append
+      - run: python -m pytest --disable-pytest-warnings --cov-config=.coveragerc --cov=modin modin/pandas/test/test_groupby.py --cov-append
+      - run: python -m pytest --disable-pytest-warnings --cov-config=.coveragerc --cov=modin modin/pandas/test/test_reshape.py --cov-append
+      - run: python -m pytest --disable-pytest-warnings --cov-config=.coveragerc --cov=modin modin/pandas/test/test_general.py --cov-append
+      - run: pip install numexpr
+      - run: python -m pytest --disable-pytest-warnings --cov-config=.coveragerc --cov=modin modin/pandas/test/test_io.py --cov-append
+      - run: python -m pytest --disable-pytest-warnings --cov-config=.coveragerc --cov=modin modin/experimental/pandas/test/test_io_exp.py --cov-append
+      - run: bash <(curl -s https://codecov.io/bash)
