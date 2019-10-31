@@ -1326,9 +1326,6 @@ class StringMethods(object):
         )
 
     def split(self, pat=None, n=-1, expand=False):
-        if not pat and pat is not None:
-            raise ValueError("split() requires a non-empty pattern match.")
-
         if expand:
             return self._default_to_pandas(
                 pandas.Series.str.split, pat=pat, n=n, expand=expand
